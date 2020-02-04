@@ -21,7 +21,6 @@ import sun.misc.Unsafe;
 
 import com.lmax.disruptor.util.Util;
 
-
 /**
  * <p>Coordinator for claiming sequences for access to a data structure while tracking dependent {@link Sequence}s.
  * Suitable for use for sequencing across multiple publisher threads.</p>
@@ -37,7 +36,7 @@ public final class MultiProducerSequencer extends AbstractSequencer
     private static final long BASE = UNSAFE.arrayBaseOffset(int[].class);
     /*** int[]数组中每个元素的所占用内存大小 */
     private static final long SCALE = UNSAFE.arrayIndexScale(int[].class);
-
+    /*** 所有消费者的Sequence中最小的那一个的缓存 */
     private final Sequence gatingSequenceCache = new Sequence(Sequencer.INITIAL_CURSOR_VALUE);
 
     // availableBuffer tracks the state of each ringbuffer slot
@@ -112,6 +111,7 @@ public final class MultiProducerSequencer extends AbstractSequencer
     }
 
     /**
+     * 获取下一个可插入数据的solt位置,这里可能会有多个生产线程并发访问使用cas操作
      * @see Sequencer#next(int)
      */
     @Override
@@ -127,22 +127,31 @@ public final class MultiProducerSequencer extends AbstractSequencer
 
         do
         {
+            //获取当前RingBuffer的cursor游标位置
             current = cursor.get();
+            //获取下个索引位置
             next = current + n;
-
+            //可认为是：下一个要生产的数据的位置。例如bufferSize=4，这里的分布是：-4，-3，-2，-1，0，1，2，3，4，5，6，7，8 ，so on是不是很像数组的下标位置
             long wrapPoint = next - bufferSize;
+            //获取最慢消费线程的游标
             long cachedGatingSequence = gatingSequenceCache.get();
-
+            /**
+             *  1.下一个生产数据位置大于消费最慢线程位置
+             *  2.消费最慢线程位置大于当前生产游标位置，则进行自旋。
+             *  总结：每当生产下一个周期数据，需要等待消费者把当前周期内元素消费完成
+             */
             if (wrapPoint > cachedGatingSequence || cachedGatingSequence > current)
             {
+                //从所有消费者Sequence中获取游标值和current取最小值 min(current,Sequence[n].value)
                 long gatingSequence = Util.getMinimumSequence(gatingSequences, current);
-
+                //需要阻塞1纳秒，等待其他消费线程消费数据更新各自的Sequence游标到所有消费者最小游标大于或等于wrapPoint停止自旋。
                 if (wrapPoint > gatingSequence)
                 {
+                    //最慢消费线程没有跟随生产线程
                     LockSupport.parkNanos(1); // TODO, should we spin based on the wait strategy?
                     continue;
                 }
-
+                //不断更新消费最慢线程的游标位置
                 gatingSequenceCache.set(gatingSequence);
             }
             else if (cursor.compareAndSet(current, next))
@@ -221,10 +230,12 @@ public final class MultiProducerSequencer extends AbstractSequencer
     public void publish(final long sequence)
     {
         setAvailable(sequence);
+        //通知被阻塞的消费者继续消费
         waitStrategy.signalAllWhenBlocking();
     }
 
     /**
+     * 发布一段长度数据
      * @see Sequencer#publish(long, long)
      */
     @Override
@@ -238,6 +249,9 @@ public final class MultiProducerSequencer extends AbstractSequencer
     }
 
     /**
+     *
+     * 主要作用是记录cursor围绕RingBuffer旋转周期次数和RingBuffer每个元素位置一一对于
+     *
      * The below methods work on the availableBuffer flag.
      * <p>
      * The prime reason is to avoid a shared sequence object between publisher threads.
@@ -261,6 +275,17 @@ public final class MultiProducerSequencer extends AbstractSequencer
         setAvailableBufferValue(calculateIndex(sequence), calculateAvailabilityFlag(sequence));
     }
 
+    /***
+     *
+     * 设置本地的availableBuffer
+     *
+     * @author liyong
+     * @date 14:41 2020-02-04
+     * @param index
+ * @param flag
+     * @exception
+     * @return void
+     **/
     private void setAvailableBufferValue(int index, int flag)
     {
         long bufferAddress = (index * SCALE) + BASE;
@@ -312,7 +337,7 @@ public final class MultiProducerSequencer extends AbstractSequencer
      *
      * @author liyong
      * @date 20:30 2020-02-03
-     * @param [sequence]
+     * @param
      * @exception
      * @return int
      **/
@@ -327,7 +352,7 @@ public final class MultiProducerSequencer extends AbstractSequencer
      *
      * @author liyong
      * @date 19:52 2020-02-03
-     * @param [sequence 序列号]
+     * @param
      * @exception
      * @return int
      **/

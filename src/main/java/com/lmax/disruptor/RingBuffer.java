@@ -101,6 +101,16 @@ abstract class RingBufferFields<E> extends RingBufferPad
         }
     }
 
+    /***
+     *
+     * Unsafe直接操作内存地址获取数组元素值
+     *
+     * @author liyong
+     * @date 14:39 2020-02-04
+     * @param sequence
+     * @exception
+     * @return E
+     **/
     @SuppressWarnings("unchecked")
     protected final E elementAt(long sequence)
     {
@@ -879,6 +889,7 @@ public final class RingBuffer<E> extends RingBufferFields<E> implements Cursored
     }
 
     /**
+     * 发布消息到RingBuffer中
      * Publish the specified sequence.  This action marks this particular
      * message as being available to be read.
      *
