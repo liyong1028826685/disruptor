@@ -164,6 +164,7 @@ public class Disruptor<T>
     @SafeVarargs
     public final EventHandlerGroup<T> handleEventsWith(final EventHandler<? super T>... handlers)
     {
+        // 这种创建Sequence ProcessingSequenceBarrier中 dependentSequence == cursorSequence;
         return createEventProcessors(new Sequence[0], handlers);
     }
 
@@ -393,8 +394,10 @@ public class Disruptor<T>
     public RingBuffer<T> start()
     {
         checkOnlyStartedOnce();
+        //获取ConsumerRepository中注册的消费者信息，去启动消费者
         for (final ConsumerInfo consumerInfo : consumerRepository)
         {
+            //指向EventProcessor#run方法
             consumerInfo.start(executor);
         }
 
@@ -534,19 +537,32 @@ public class Disruptor<T>
         return consumerRepository.hasBacklog(cursor, false);
     }
 
+    /***
+     *
+     * 创建事件处理器
+     *
+     * @author liyong
+     * @date 22:34 2020-02-03
+     * @param [barrierSequences, eventHandlers]
+     * @exception
+     * @return com.lmax.disruptor.dsl.EventHandlerGroup<T>
+     **/
     EventHandlerGroup<T> createEventProcessors(
         final Sequence[] barrierSequences,
         final EventHandler<? super T>[] eventHandlers)
     {
         checkNotStarted();
 
+        //每一个processor消费者都拥有独立的Sequence
         final Sequence[] processorSequences = new Sequence[eventHandlers.length];
+        //所有消费者拥有同一个SequenceBarrier（ProcessingSequenceBarrier）屏障
         final SequenceBarrier barrier = ringBuffer.newBarrier(barrierSequences);
 
         for (int i = 0, eventHandlersLength = eventHandlers.length; i < eventHandlersLength; i++)
         {
             final EventHandler<? super T> eventHandler = eventHandlers[i];
 
+            //EventHandler封装成BatchEventProcessor
             final BatchEventProcessor<T> batchEventProcessor =
                 new BatchEventProcessor<>(ringBuffer, barrier, eventHandler);
 
@@ -554,7 +570,7 @@ public class Disruptor<T>
             {
                 batchEventProcessor.setExceptionHandler(exceptionHandler);
             }
-
+            //添加到ConsumerRepository
             consumerRepository.add(batchEventProcessor, eventHandler, barrier);
             processorSequences[i] = batchEventProcessor.getSequence();
         }
@@ -568,11 +584,15 @@ public class Disruptor<T>
     {
         if (processorSequences.length > 0)
         {
+            //把所有的BatchEventProcessor持有的Sequence存放到RingBuffer
             ringBuffer.addGatingSequences(processorSequences);
+
+            //因为EventHandlerGroup这里有链式操作可能重复添加Sequence到RingBuffer的gatingSequences中
             for (final Sequence barrierSequence : barrierSequences)
             {
                 ringBuffer.removeGatingSequence(barrierSequence);
             }
+            //标记EventProcessorInfo不是结束链，因为后面要添加链。默认是结束链
             consumerRepository.unMarkEventProcessorsAsEndOfChain(barrierSequences);
         }
     }
@@ -613,6 +633,16 @@ public class Disruptor<T>
         }
     }
 
+    /***
+     *
+     * 不能重复启动
+     *
+     * @author liyong
+     * @date 18:05 2020-02-03
+     *  * @param
+     * @exception
+     * @return void
+     **/
     private void checkOnlyStartedOnce()
     {
         if (!started.compareAndSet(false, true))

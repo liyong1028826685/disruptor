@@ -51,15 +51,17 @@ final class ProcessingSequenceBarrier implements SequenceBarrier
     public long waitFor(final long sequence)
         throws AlertException, InterruptedException, TimeoutException
     {
+        //坚持状态是否被置为alerted=true
         checkAlert();
-
+        //由Sequence[] dependentSequences 长度为1 ，所以cursorSequence==dependentSequence，返回cursor中有效位置
         long availableSequence = waitStrategy.waitFor(sequence, cursorSequence, dependentSequence, this);
 
+        //这种判断应该不存在，上面的waitFor处理的条件就是availableSequence >= sequence？
         if (availableSequence < sequence)
         {
             return availableSequence;
         }
-
+        //获取sequence到availableSequence有效Sequence中最大一个
         return sequencer.getHighestPublishedSequence(sequence, availableSequence);
     }
 

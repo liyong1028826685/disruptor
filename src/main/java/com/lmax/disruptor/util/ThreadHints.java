@@ -67,6 +67,7 @@ public final class ThreadHints
         {
             try
             {
+                //只是让CPU去执行一段没有用的代码。当时间结束之后能马上继续执行，而不是重新参与CPU的竞争,Thread.sleep需要重新去获取所
                 ON_SPIN_WAIT_METHOD_HANDLE.invokeExact();
             }
             catch (final Throwable ignore)

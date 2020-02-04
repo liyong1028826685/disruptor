@@ -116,10 +116,21 @@ class ConsumerRepository<T> implements Iterable<ConsumerInfo>
         return getEventProcessorFor(handler).getSequence();
     }
 
+    /***
+     *
+     * 标记EventProcessorInfo不是结束链默认是结束链
+     *
+     * @author liyong
+     * @date 22:32 2020-02-03
+     * @param [barrierEventProcessors]
+     * @exception
+     * @return void
+     **/
     public void unMarkEventProcessorsAsEndOfChain(final Sequence... barrierEventProcessors)
     {
         for (Sequence barrierEventProcessor : barrierEventProcessors)
         {
+            //标记endOfChain=false不是结束链
             getEventProcessorInfo(barrierEventProcessor).markAsUsedInBarrier();
         }
     }

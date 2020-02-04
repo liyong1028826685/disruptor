@@ -31,6 +31,7 @@ public final class BlockingWaitStrategy implements WaitStrategy
         throws AlertException, InterruptedException
     {
         long availableSequence;
+        //当前消费者sequence大于RingBuffer的cursor（用于生产数据的有效位置指向）
         if (cursorSequence.get() < sequence)
         {
             synchronized (mutex)
@@ -38,14 +39,17 @@ public final class BlockingWaitStrategy implements WaitStrategy
                 while (cursorSequence.get() < sequence)
                 {
                     barrier.checkAlert();
+                    //阻塞等待
                     mutex.wait();
                 }
             }
         }
 
+        //类似自旋
         while ((availableSequence = dependentSequence.get()) < sequence)
         {
             barrier.checkAlert();
+            //如果JDK的版本支持java.lang.Thread.onSpinWait()方法，则调用。否则，直接返回
             ThreadHints.onSpinWait();
         }
 

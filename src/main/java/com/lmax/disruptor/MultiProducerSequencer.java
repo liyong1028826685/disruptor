@@ -33,15 +33,20 @@ import com.lmax.disruptor.util.Util;
 public final class MultiProducerSequencer extends AbstractSequencer
 {
     private static final Unsafe UNSAFE = Util.getUnsafe();
+    /*** int[]数组的在当前对象的其实内存地址 */
     private static final long BASE = UNSAFE.arrayBaseOffset(int[].class);
+    /*** int[]数组中每个元素的所占用内存大小 */
     private static final long SCALE = UNSAFE.arrayIndexScale(int[].class);
 
     private final Sequence gatingSequenceCache = new Sequence(Sequencer.INITIAL_CURSOR_VALUE);
 
     // availableBuffer tracks the state of each ringbuffer slot
     // see below for more details on the approach
+    /*** 每个生产者拥有RingBuffer的对应大小的数组，用来保存对应RingBuffer位置元素在第几个环周期上 */
     private final int[] availableBuffer;
+    /*** 用于索引计算，类似数组取模获取数组索引位置 */
     private final int indexMask;
+    /*** 获取对数以2为底的指数值，用于计算availableBuffer中的值 */
     private final int indexShift;
 
     /**
@@ -56,6 +61,7 @@ public final class MultiProducerSequencer extends AbstractSequencer
         availableBuffer = new int[bufferSize];
         indexMask = bufferSize - 1;
         indexShift = Util.log2(bufferSize);
+        //初始化生产者本地RingBuffer映射每个Solt初始值
         initialiseAvailableBuffer();
     }
 
@@ -262,17 +268,30 @@ public final class MultiProducerSequencer extends AbstractSequencer
     }
 
     /**
+     * 确定sequence已经被发布了，并且event事件是有效的
      * @see Sequencer#isAvailable(long)
      */
     @Override
     public boolean isAvailable(long sequence)
     {
+        //元素位置
         int index = calculateIndex(sequence);
         int flag = calculateAvailabilityFlag(sequence);
         long bufferAddress = (index * SCALE) + BASE;
         return UNSAFE.getIntVolatile(availableBuffer, bufferAddress) == flag;
     }
 
+    /***
+     *
+     * 获取lowerBound到availableSequence中有效sequence且最大
+     *
+     * @author liyong
+     * @date 19:43 2020-02-03
+     * @param lowerBound
+     * @param availableSequence
+     * @exception
+     * @return long
+     **/
     @Override
     public long getHighestPublishedSequence(long lowerBound, long availableSequence)
     {
@@ -287,11 +306,31 @@ public final class MultiProducerSequencer extends AbstractSequencer
         return availableSequence;
     }
 
+    /***
+     *
+     * 就是这个环（RingBuffer）循环第几周（圈）
+     *
+     * @author liyong
+     * @date 20:30 2020-02-03
+     * @param [sequence]
+     * @exception
+     * @return int
+     **/
     private int calculateAvailabilityFlag(final long sequence)
     {
         return (int) (sequence >>> indexShift);
     }
 
+    /***
+     *
+     * sequence在数组中的索引位置，类似求模运算 序号%数组长度
+     *
+     * @author liyong
+     * @date 19:52 2020-02-03
+     * @param [sequence 序列号]
+     * @exception
+     * @return int
+     **/
     private int calculateIndex(final long sequence)
     {
         return ((int) sequence) & indexMask;

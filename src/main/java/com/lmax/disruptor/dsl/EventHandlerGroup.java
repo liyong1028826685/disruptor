@@ -134,6 +134,9 @@ public class EventHandlerGroup<T>
     }
 
     /**
+     *
+     * 事件链处理
+     *
      * <p>Set up batch handlers to handle events from the ring buffer. These handlers will only process events
      * after every {@link EventProcessor} in this group has processed the event.</p>
      *
@@ -148,6 +151,7 @@ public class EventHandlerGroup<T>
     @SafeVarargs
     public final EventHandlerGroup<T> handleEventsWith(final EventHandler<? super T>... handlers)
     {
+        //
         return disruptor.createEventProcessors(sequences, handlers);
     }
 

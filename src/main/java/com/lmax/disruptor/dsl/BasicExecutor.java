@@ -8,6 +8,22 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ThreadFactory;
 
+/***
+ *@className BasicExecutor
+ *
+ *@description
+ *
+ * 封装 {@link java.lang.Runnable},并通过队列来持有所有执行线程以便后面对线程进行监控
+ *
+ *@author <a href="http://youngitman.tech">青年IT男</a>
+ *
+ *@date 17:41 2020-02-03
+ *
+ *@JunitTest: {@link  }
+ *
+ *@version v1.0.0
+ *
+**/
 public class BasicExecutor implements Executor
 {
     private final ThreadFactory factory;
@@ -40,6 +56,16 @@ public class BasicExecutor implements Executor
             '}';
     }
 
+    /***
+     *
+     * 获取消费执行线程信息
+     *
+     * @author liyong
+     * @date 17:44 2020-02-03
+     *  * @param
+     * @exception
+     * @return java.lang.String
+     **/
     private String dumpThreadInfo()
     {
         final StringBuilder sb = new StringBuilder();

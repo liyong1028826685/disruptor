@@ -52,10 +52,13 @@ abstract class RingBufferFields<E> extends RingBufferPad
         // Including the buffer pad in the array base offset
         REF_ARRAY_BASE = UNSAFE.arrayBaseOffset(Object[].class) + 128;
     }
-
+    /*** 数组长度-1用于计算在数组中位置*/
     private final long indexMask;
+    /*** 保存当前RingBuffer中的数据，采用数组结构 */
     private final Object[] entries;
+    /*** RingBuffer数组的长度 */
     protected final int bufferSize;
+    /*** 持有指向RingBuffer环的cursor索引指针 */
     protected final Sequencer sequencer;
 
     RingBufferFields(
@@ -75,10 +78,21 @@ abstract class RingBufferFields<E> extends RingBufferPad
         }
 
         this.indexMask = bufferSize - 1;
+        //分配数组中前后填充 BUFFER_PAD
         this.entries = new Object[sequencer.getBufferSize() + 2 * BUFFER_PAD];
         fill(eventFactory);
     }
 
+    /***
+     *
+     * 从BUFFER_PAD + 索引 位置开始初始化RingBuffer数组中的Event
+     *
+     * @author liyong
+     * @date 18:03 2020-02-03
+     *  * @param eventFactory
+     * @exception
+     * @return void
+     **/
     private void fill(EventFactory<E> eventFactory)
     {
         for (int i = 0; i < bufferSize; i++)
@@ -135,6 +149,7 @@ public final class RingBuffer<E> extends RingBufferFields<E> implements Cursored
         int bufferSize,
         WaitStrategy waitStrategy)
     {
+        //使用MultiProducerSequencer,多生产者
         MultiProducerSequencer sequencer = new MultiProducerSequencer(bufferSize, waitStrategy);
 
         return new RingBuffer<E>(factory, sequencer);
@@ -152,6 +167,7 @@ public final class RingBuffer<E> extends RingBufferFields<E> implements Cursored
      */
     public static <E> RingBuffer<E> createMultiProducer(EventFactory<E> factory, int bufferSize)
     {
+        //当队列满数据时阻塞等待，使用BlockingWaitStrategy策略
         return createMultiProducer(factory, bufferSize, new BlockingWaitStrategy());
     }
 

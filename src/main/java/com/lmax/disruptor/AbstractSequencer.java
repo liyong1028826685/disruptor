@@ -32,7 +32,9 @@ public abstract class AbstractSequencer implements Sequencer
 
     protected final int bufferSize;
     protected final WaitStrategy waitStrategy;
+    /*** 控制生产者生产数据位置游标 */
     protected final Sequence cursor = new Sequence(Sequencer.INITIAL_CURSOR_VALUE);
+    /*** 所有BatchEventProcessor消费者的Sequence游标 */
     protected volatile Sequence[] gatingSequences = new Sequence[0];
 
     /**

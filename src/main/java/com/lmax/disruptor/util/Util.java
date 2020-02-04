@@ -124,6 +124,9 @@ public final class Util
     }
 
     /**
+     *
+     * 求对数值 例如：log2^4 = 2,获取最高为值(2^n < i)
+     *
      * Calculate the log base 2 of the supplied integer, essentially reports the location
      * of the highest bit.
      *
