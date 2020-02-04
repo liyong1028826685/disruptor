@@ -77,6 +77,9 @@ final class ProcessingSequenceBarrier implements SequenceBarrier
         return alerted;
     }
 
+    /**
+     * 停止处理器标记，同时通知所有被阻塞的处理器
+     */
     @Override
     public void alert()
     {

@@ -73,6 +73,18 @@ public final class MultiProducerSequencer extends AbstractSequencer
         return hasAvailableCapacity(gatingSequences, requiredCapacity, cursor.get());
     }
 
+    /***
+     *
+     * 参考{@link com.lmax.disruptor.MultiProducerSequencer#next(int)}
+     *
+     * @author liyong
+     * @date 16:44 2020-02-04
+     * @param gatingSequences
+     * @param requiredCapacity
+     * @param cursorValue
+     * @exception
+     * @return boolean
+     **/
     private boolean hasAvailableCapacity(Sequence[] gatingSequences, final int requiredCapacity, long cursorValue)
     {
         long wrapPoint = (cursorValue + requiredCapacity) - bufferSize;
@@ -148,7 +160,7 @@ public final class MultiProducerSequencer extends AbstractSequencer
                 if (wrapPoint > gatingSequence)
                 {
                     //最慢消费线程没有跟随生产线程
-                    LockSupport.parkNanos(1); // TODO, should we spin based on the wait strategy?
+                    LockSupport.parkNanos(1);
                     continue;
                 }
                 //不断更新消费最慢线程的游标位置
@@ -277,7 +289,7 @@ public final class MultiProducerSequencer extends AbstractSequencer
 
     /***
      *
-     * 设置本地的availableBuffer
+     * 设置本地的availableBuffer的环周期数
      *
      * @author liyong
      * @date 14:41 2020-02-04
@@ -289,11 +301,12 @@ public final class MultiProducerSequencer extends AbstractSequencer
     private void setAvailableBufferValue(int index, int flag)
     {
         long bufferAddress = (index * SCALE) + BASE;
+        //延迟赋值，不保证新的赋值能立即被其他线程获取到
         UNSAFE.putOrderedInt(availableBuffer, bufferAddress, flag);
     }
 
     /**
-     * 确定sequence已经被发布了，并且event事件是有效的
+     * 确定sequence已经被发布了，并且event事件是有效的，确定在同一个环周期数
      * @see Sequencer#isAvailable(long)
      */
     @Override
@@ -301,8 +314,11 @@ public final class MultiProducerSequencer extends AbstractSequencer
     {
         //元素位置
         int index = calculateIndex(sequence);
+        //通过sequence计算出环周期数
         int flag = calculateAvailabilityFlag(sequence);
+        //sequence元素在availableBuffer数组中的位置
         long bufferAddress = (index * SCALE) + BASE;
+        //获得给定对象的指定偏移量offset的int值，使用volatile语义，总能获取到最新的int值。
         return UNSAFE.getIntVolatile(availableBuffer, bufferAddress) == flag;
     }
 

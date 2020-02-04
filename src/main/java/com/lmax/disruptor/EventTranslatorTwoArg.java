@@ -16,6 +16,7 @@
 package com.lmax.disruptor;
 
 /**
+ * 实现接口可以设置Event值，可以在发布消息的时候传递两个参数值
  * Implementations translate another data representations into events claimed from the {@link RingBuffer}
  *
  * @param <T> event implementation storing the data for sharing during exchange or parallel coordination of an event.

@@ -5,6 +5,20 @@ import com.lmax.disruptor.EventHandler;
 import java.util.ArrayList;
 import java.util.List;
 
+/***
+ *@className KeyedBatching
+ *
+ *@description 当事件积累到一定数量在批处理
+ *
+ *@author <a href="http://youngitman.tech">青年IT男</a>
+ *
+ *@date 22:03 2020-02-04
+ *
+ *@JunitTest: {@link  }
+ *
+ *@version v1.0.0
+ *
+**/
 public class KeyedBatching implements EventHandler<KeyedBatching.KeyedEvent>
 {
     private static final int MAX_BATCH_SIZE = 100;

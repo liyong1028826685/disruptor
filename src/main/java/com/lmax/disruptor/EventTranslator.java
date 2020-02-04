@@ -16,6 +16,8 @@
 package com.lmax.disruptor;
 
 /**
+ * 实现接口可以设置Event值
+ *
  * <p>Implementations translate (write) data representations into events claimed from the {@link RingBuffer}.</p>
  *
  * <p>When publishing to the RingBuffer, provide an EventTranslator. The RingBuffer will select the next available

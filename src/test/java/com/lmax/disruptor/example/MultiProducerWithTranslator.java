@@ -48,6 +48,11 @@ public class MultiProducerWithTranslator
         {
             string = arg2;
         }
+
+        @Override
+        public String toString() {
+            return message.toString()+transportable.toString()+string;
+        }
     }
 
     public static class Publisher implements EventTranslatorThreeArg<ObjectBox, IMessage, ITransportable, String>
@@ -66,7 +71,7 @@ public class MultiProducerWithTranslator
         @Override
         public void onEvent(ObjectBox event, long sequence, boolean endOfBatch) throws Exception
         {
-
+            System.out.println(event);
         }
     }
 

@@ -7,7 +7,9 @@ public class EventPoller<T>
 {
     private final DataProvider<T> dataProvider;
     private final Sequencer sequencer;
+    /*** Poller的本地游标类比消费者本地游标 */
     private final Sequence sequence;
+    /*** 当前Poller消费数据是所依赖的其他所有Poller或消费者（类似链式处理，必须前面一个handler处理了后面的）handler才能处理*/
     private final Sequence gatingSequence;
 
     public interface Handler<T>
@@ -32,12 +34,20 @@ public class EventPoller<T>
         this.gatingSequence = gatingSequence;
     }
 
+    /**
+     * 每次poll会把所有有效数据全部获取
+     * @param eventHandler
+     * @return
+     * @throws Exception
+     */
     public PollState poll(final Handler<T> eventHandler) throws Exception
     {
         final long currentSequence = sequence.get();
+        //获取下一个游标位置
         long nextSequence = currentSequence + 1;
+        //获取有效的Sequence
         final long availableSequence = sequencer.getHighestPublishedSequence(nextSequence, gatingSequence.get());
-
+        //如果Poller的Sequence<=availableSequence说明有数据可以消费
         if (nextSequence <= availableSequence)
         {
             boolean processNextEvent;
@@ -45,6 +55,7 @@ public class EventPoller<T>
 
             try
             {
+                //循环开始获取数据，并且移动本地Sequence游标
                 do
                 {
                     final T event = dataProvider.get(nextSequence);
@@ -57,6 +68,7 @@ public class EventPoller<T>
             }
             finally
             {
+                //设置本地的Sequence游标到处理完数据的位置，以便后续继续消费
                 sequence.set(processedSequence);
             }
 
@@ -64,10 +76,12 @@ public class EventPoller<T>
         }
         else if (sequencer.getCursor() >= nextSequence)
         {
+            //没有数据消费
             return PollState.GATING;
         }
         else
         {
+            //空闲
             return PollState.IDLE;
         }
     }
