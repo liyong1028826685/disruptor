@@ -6,6 +6,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import static com.lmax.disruptor.util.Util.awaitNanos;
 
 /**
+ * TimeoutBlockingWaitStrategy的优化，在无锁竞争情况下调用notifyAll可能产生性能问题
  * Variation of the {@link TimeoutBlockingWaitStrategy} that attempts to elide conditional wake-ups
  * when the lock is uncontended.
  */

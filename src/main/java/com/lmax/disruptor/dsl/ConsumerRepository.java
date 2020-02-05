@@ -20,6 +20,7 @@ import com.lmax.disruptor.*;
 import java.util.*;
 
 /**
+ * EventHandler和EventProcessor进行关联
  * Provides a repository mechanism to associate {@link EventHandler}s with {@link EventProcessor}s
  *
  * @param <T> the type of the {@link EventHandler}
@@ -81,6 +82,7 @@ class ConsumerRepository<T> implements Iterable<ConsumerInfo>
     }
 
     /**
+     * 获取所有的消费者Sequence，并且是endOfChain==true
      * @deprecated this function should no longer be used to determine the existence
      * of a backlog, instead use hasBacklog
      */
@@ -126,7 +128,7 @@ class ConsumerRepository<T> implements Iterable<ConsumerInfo>
      * 获取消费者EventHandler对应的Sequence游标
      *
      * @author liyong 
-     * @date 11:46 2020-02-05 
+     * @date 12:05 2020-02-05
      * @param handler 
      * @exception 
      * @return com.lmax.disruptor.Sequence 

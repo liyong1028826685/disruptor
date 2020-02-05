@@ -144,6 +144,7 @@ public final class MultiProducerSequencer extends AbstractSequencer
             //获取下个索引位置
             next = current + n;
             //可认为是：下一个要生产的数据的位置。例如bufferSize=4，这里的分布是：-4，-3，-2，-1，0，1，2，3，4，5，6，7，8 ，so on是不是很像数组的下标位置
+            //我个人是这么理解的：这里设计wrapPoint的目的是因为消费者始终慢于生产者最多在一圈内不能大于一圈，所有这里设计wrapPoint是下一个位置减去bufferSize获取这个判断零界点。
             long wrapPoint = next - bufferSize;
             //获取最慢消费线程的游标
             long cachedGatingSequence = gatingSequenceCache.get();

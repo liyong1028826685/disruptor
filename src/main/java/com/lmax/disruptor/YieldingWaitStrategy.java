@@ -17,6 +17,9 @@ package com.lmax.disruptor;
 
 
 /**
+ *
+ * 使用自旋+Thread.yield()
+ *
  * Yielding strategy that uses a Thread.yield() for {@link com.lmax.disruptor.EventProcessor}s waiting on a barrier
  * after an initially spinning.
  * <p>

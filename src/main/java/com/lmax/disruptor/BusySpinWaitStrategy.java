@@ -19,6 +19,8 @@ package com.lmax.disruptor;
 import com.lmax.disruptor.util.ThreadHints;
 
 /**
+ * 不让出CPU执行权，自旋 。Thread.sleep()会让出CPU执行权
+ *
  * Busy Spin strategy that uses a busy spin loop for {@link com.lmax.disruptor.EventProcessor}s waiting on a barrier.
  * <p>
  * This strategy will use CPU resource to avoid syscalls which can introduce latency jitter.  It is best
@@ -33,6 +35,7 @@ public final class BusySpinWaitStrategy implements WaitStrategy
     {
         long availableSequence;
 
+        //必须要等依赖的处理器处理了才能继续执行当前处理器，所有dependentSequence.get() >= sequence，反之则自旋
         while ((availableSequence = dependentSequence.get()) < sequence)
         {
             barrier.checkAlert();

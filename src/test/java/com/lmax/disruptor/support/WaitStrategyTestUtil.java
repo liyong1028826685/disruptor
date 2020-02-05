@@ -38,7 +38,7 @@ public class WaitStrategyTestUtil
         EXECUTOR.execute(sequenceUpdater);
         sequenceUpdater.waitForStartup();
         Sequence cursor = new Sequence(0);
-        long sequence = waitStrategy.waitFor(0, cursor, sequenceUpdater.sequence, new DummySequenceBarrier());
+        long sequence = waitStrategy.waitFor(2, cursor, sequenceUpdater.sequence, new DummySequenceBarrier());
 
         assertThat(sequence, is(0L));
     }

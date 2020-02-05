@@ -18,6 +18,9 @@ package com.lmax.disruptor;
 import java.util.concurrent.locks.LockSupport;
 
 /**
+ *
+ * 使用 [0,100]Thread.yield()让出CPU时间片、 (100,200]自旋、 (0,负数]LockSupport.parkNanos(n)阻塞线程。不需要生产者主动唤醒
+ *
  * Sleeping strategy that initially spins, then uses a Thread.yield(), and
  * eventually sleep (<code>LockSupport.parkNanos(n)</code>) for the minimum
  * number of nanos the OS and JVM will allow while the

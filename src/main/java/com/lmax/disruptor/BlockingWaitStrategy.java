@@ -59,6 +59,7 @@ public final class BlockingWaitStrategy implements WaitStrategy
     @Override
     public void signalAllWhenBlocking()
     {
+        //这个地方在没有竞争的时候，调用notifyAll可能有性能问题
         synchronized (mutex)
         {
             mutex.notifyAll();

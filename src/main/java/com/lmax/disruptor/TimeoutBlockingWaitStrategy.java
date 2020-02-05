@@ -5,6 +5,9 @@ import java.util.concurrent.TimeUnit;
 import static com.lmax.disruptor.util.Util.awaitNanos;
 
 /**
+ *
+ * 多线程消费的时候，其中一个线程获取锁，其他线程阻塞，等到获取锁线程周期检测是否有数据可以消费或超时为止
+ *
  * Blocking strategy that uses a lock and condition variable for {@link EventProcessor}s waiting on a barrier.
  * However it will periodically wake up if it has been idle for specified period by throwing a
  * {@link TimeoutException}.  To make use of this, the event handler class should implement the {@link TimeoutHandler},
@@ -37,6 +40,7 @@ public class TimeoutBlockingWaitStrategy implements WaitStrategy
         {
             synchronized (mutex)
             {
+                //检测是否有数据可以消费
                 while (cursorSequence.get() < sequence)
                 {
                     barrier.checkAlert();

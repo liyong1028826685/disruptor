@@ -33,31 +33,40 @@ public class ConsumerRepositoryTest
     private ConsumerRepository<TestEvent> consumerRepository;
     private EventProcessor eventProcessor1;
     private EventProcessor eventProcessor2;
+    private EventProcessor eventProcessor3;
     private SleepingEventHandler handler1;
     private SleepingEventHandler handler2;
+    private SleepingEventHandler handler3;
     private SequenceBarrier barrier1;
     private SequenceBarrier barrier2;
+    private SequenceBarrier barrier3;
 
     @Before
     public void setUp() throws Exception
     {
         consumerRepository = new ConsumerRepository<TestEvent>();
+        //每个EventProcessor各自拥有Sequence游标
         eventProcessor1 = new DummyEventProcessor(new Sequence());
         eventProcessor2 = new DummyEventProcessor(new Sequence());
+        eventProcessor3 = new DummyEventProcessor(new Sequence());
 
         eventProcessor1.run();
         eventProcessor2.run();
+        eventProcessor3.run();
 
         handler1 = new SleepingEventHandler();
         handler2 = new SleepingEventHandler();
+        handler3 = new SleepingEventHandler();
 
         barrier1 = new DummySequenceBarrier();
         barrier2 = new DummySequenceBarrier();
+        barrier3 = new DummySequenceBarrier();
     }
 
     @Test
     public void shouldGetBarrierByHandler() throws Exception
     {
+        //EventProcessor和EventHandler绑定
         consumerRepository.add(eventProcessor1, handler1, barrier1);
 
         assertThat(consumerRepository.getBarrierFor(handler1), sameInstance(barrier1));
@@ -74,12 +83,13 @@ public class ConsumerRepositoryTest
     {
         consumerRepository.add(eventProcessor1, handler1, barrier1);
         consumerRepository.add(eventProcessor2, handler2, barrier2);
+        consumerRepository.add(eventProcessor3, handler3, barrier3);
 
         consumerRepository.unMarkEventProcessorsAsEndOfChain(eventProcessor2.getSequence());
 
 
         final Sequence[] lastEventProcessorsInChain = consumerRepository.getLastSequenceInChain(true);
-        assertThat(lastEventProcessorsInChain.length, equalTo(1));
+        assertThat(lastEventProcessorsInChain.length, equalTo(2));
         assertThat(lastEventProcessorsInChain[0], sameInstance(eventProcessor1.getSequence()));
     }
 

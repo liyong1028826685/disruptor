@@ -20,6 +20,7 @@ import com.lmax.disruptor.util.ThreadHints;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
+ * BlockingWaitStrategy的优化版本，在notifyAll前面增加判断条件
  * Variation of the {@link BlockingWaitStrategy} that attempts to elide conditional wake-ups when
  * the lock is uncontended.  Shows performance improvements on microbenchmarks.  However this
  * wait strategy should be considered experimental as I have not full proved the correctness of
@@ -58,6 +59,7 @@ public final class LiteBlockingWaitStrategy implements WaitStrategy
         while ((availableSequence = dependentSequence.get()) < sequence)
         {
             barrier.checkAlert();
+            //旋转
             ThreadHints.onSpinWait();
         }
 
