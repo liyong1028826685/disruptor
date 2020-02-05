@@ -448,6 +448,7 @@ public final class RingBuffer<E> extends RingBufferFields<E> implements Cursored
     }
 
     /**
+     * 获取RingBuffer中cursor位置，多线程是可见的，被volatile标注
      * Get the current cursor value for the ring buffer.  The actual value received
      * will depend on the type of {@link Sequencer} that is being used.
      *
@@ -502,6 +503,7 @@ public final class RingBuffer<E> extends RingBufferFields<E> implements Cursored
     {
         try
         {
+            //尝试去获取下一个cursor位置，不会被阻塞，但是没有可用的位置会报错
             final long sequence = sequencer.tryNext();
             translateAndPublish(translator, sequence);
             return true;
@@ -918,6 +920,7 @@ public final class RingBuffer<E> extends RingBufferFields<E> implements Cursored
     }
 
     /**
+     * 获取RingBuffer剩余容量
      * Get the remaining capacity for this ringBuffer.
      *
      * @return The number of slots remaining.
@@ -984,6 +987,17 @@ public final class RingBuffer<E> extends RingBufferFields<E> implements Cursored
         }
     }
 
+    /***
+     *
+     * 获取RingBuffer sequence 位置元素，回掉自动义的EventTranslator
+     *
+     * @author liyong
+     * @date 11:43 2020-02-05
+     * @param translator
+ * @param sequence
+     * @exception
+     * @return void
+     **/
     private void translateAndPublish(EventTranslator<E> translator, long sequence)
     {
         try
@@ -992,6 +1006,7 @@ public final class RingBuffer<E> extends RingBufferFields<E> implements Cursored
         }
         finally
         {
+            //发布元素到RingBuffer
             sequencer.publish(sequence);
         }
     }

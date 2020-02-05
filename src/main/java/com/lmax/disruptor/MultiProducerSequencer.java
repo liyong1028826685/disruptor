@@ -177,6 +177,8 @@ public final class MultiProducerSequencer extends AbstractSequencer
     }
 
     /**
+     * 尝试去获取下一个cursor位置，不会被阻塞，但是没有可用的位置会报错
+     *
      * @see Sequencer#tryNext()
      */
     @Override
@@ -215,11 +217,13 @@ public final class MultiProducerSequencer extends AbstractSequencer
     }
 
     /**
+     * RingBuffer中可以用于生产数据的容量
      * @see Sequencer#remainingCapacity()
      */
     @Override
     public long remainingCapacity()
     {
+        //获取消费者中游标最小的值（生产者游标正常情况>=消费者游标）
         long consumed = Util.getMinimumSequence(gatingSequences, cursor.get());
         long produced = cursor.get();
         return getBufferSize() - (produced - consumed);

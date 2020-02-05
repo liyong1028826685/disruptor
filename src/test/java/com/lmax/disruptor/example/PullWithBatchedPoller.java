@@ -4,6 +4,10 @@ import com.lmax.disruptor.EventFactory;
 import com.lmax.disruptor.EventPoller;
 import com.lmax.disruptor.RingBuffer;
 
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+
 /**
  * 提供一个类似多级缓存模式，先从本地缓存获取，获取不到才从RingBuffer获取数据，每次或取所有有效数据并保存到本地缓存
  * 然后获取数据是从本地获取
@@ -15,14 +19,50 @@ public class PullWithBatchedPoller {
         int batchSize = 40;
         RingBuffer<BatchedPoller.DataEvent<Object>> ringBuffer = RingBuffer.createMultiProducer(BatchedPoller.DataEvent.factory(), 1024);
 
-        BatchedPoller<Object> poller = new BatchedPoller<Object>(ringBuffer, batchSize);
+        for (int i = 0; i < 2; i++) {
+            new Thread(() -> {
+                //每个线程都需要自己维护一个poller
+                BatchedPoller<Object> poller = new BatchedPoller<Object>(ringBuffer, batchSize);
 
-        Object value = poller.poll();
+                while (true){
 
-        // Value could be null if no events are available.
-        if (null != value) {
-            // Process value.
+                    Object value = null;
+                    try {
+                        value = poller.poll();
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+
+                    // Value could be null if no events are available.
+                    if (null != value) {
+                        // Process value.
+                        System.out.println("The thread number is " + Thread.currentThread().getName() + " for consumer data " + value);
+                    }else {
+                        try {
+                            TimeUnit.MILLISECONDS.sleep(1_000);
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }
+
+            }).start();
         }
+
+        TimeUnit.MILLISECONDS.sleep(2_00);
+
+        for (int i = 0; i < 20; i++) {
+            //发布数据
+            long sequence = ringBuffer.next();
+
+            BatchedPoller.DataEvent event = ringBuffer.get(sequence);
+            event.data = i;
+
+            ringBuffer.publish(sequence);
+        }
+
+        TimeUnit.MILLISECONDS.sleep(50_000);
+
     }
 }
 
@@ -58,13 +98,10 @@ class BatchedPoller<T> {
     private EventPoller.PollState loadNextValues(EventPoller<BatchedPoller.DataEvent<T>> poller, final BatchedData<T> batch)
             throws Exception {
         //开始从RingBuffer获取数据
-        return poller.poll(new EventPoller.Handler<BatchedPoller.DataEvent<T>>() {
-            @Override
-            public boolean onEvent(BatchedPoller.DataEvent<T> event, long sequence, boolean endOfBatch) throws Exception {
-                T item = event.copyOfData();
-                //添加到本地缓存
-                return item != null ? batch.addDataItem(item) : false;
-            }
+        return poller.poll((event, sequence, endOfBatch) -> {
+            T item = event.copyOfData();
+            //添加到本地缓存
+            return item != null ? batch.addDataItem(item) : false;
         });
     }
 
@@ -73,13 +110,7 @@ class BatchedPoller<T> {
         T data;
 
         public static <T> EventFactory<BatchedPoller.DataEvent<T>> factory() {
-            return new EventFactory<BatchedPoller.DataEvent<T>>() {
-
-                @Override
-                public BatchedPoller.DataEvent<T> newInstance() {
-                    return new BatchedPoller.DataEvent<T>();
-                }
-            };
+            return () -> new DataEvent<T>();
         }
 
         public T copyOfData() {
@@ -138,6 +169,7 @@ class BatchedPoller<T> {
             data[msgHighBound++] = item;
             return msgHighBound < capacity;
         }
+
         /***
          *
          * 获取本地数据

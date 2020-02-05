@@ -52,6 +52,9 @@ public final class Util
     }
 
     /**
+     *
+     * 获取数组Sequence游标最小的值
+     *
      * Get the minimum sequence from an array of {@link com.lmax.disruptor.Sequence}s.
      *
      * @param sequences to compare.

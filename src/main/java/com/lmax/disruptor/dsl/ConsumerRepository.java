@@ -100,6 +100,16 @@ class ConsumerRepository<T> implements Iterable<ConsumerInfo>
         return lastSequence.toArray(new Sequence[lastSequence.size()]);
     }
 
+    /***
+     *
+     * 通过EventHandler查找EventProcessor
+     *
+     * @author liyong
+     * @date 10:54 2020-02-05
+     * @param handler
+     * @exception
+     * @return com.lmax.disruptor.EventProcessor
+     **/
     public EventProcessor getEventProcessorFor(final EventHandler<T> handler)
     {
         final EventProcessorInfo<T> eventprocessorInfo = getEventProcessorInfo(handler);
@@ -111,6 +121,16 @@ class ConsumerRepository<T> implements Iterable<ConsumerInfo>
         return eventprocessorInfo.getEventProcessor();
     }
 
+    /***
+     *
+     * 获取消费者EventHandler对应的Sequence游标
+     *
+     * @author liyong 
+     * @date 11:46 2020-02-05 
+     * @param handler 
+     * @exception 
+     * @return com.lmax.disruptor.Sequence 
+     **/
     public Sequence getSequenceFor(final EventHandler<T> handler)
     {
         return getEventProcessorFor(handler).getSequence();

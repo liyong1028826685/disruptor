@@ -270,6 +270,7 @@ public class Disruptor<T>
     }
 
     /**
+     * 为EventHandler创建一个ExceptionHandlerSetting，为了自定义ExceptionHandler
      * Override the default exception handler for a specific handler.
      * <pre>disruptorWizard.handleExceptionsIn(eventHandler).with(exceptionHandler);</pre>
      *
@@ -517,6 +518,8 @@ public class Disruptor<T>
     }
 
     /**
+     * 获取指定的 {@link EventHandler}Sequence游标值
+     *
      * Gets the sequence value for the specified event handlers.
      *
      * @param b1 eventHandler to get the sequence for.

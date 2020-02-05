@@ -91,6 +91,7 @@ public final class BatchEventProcessor<T>
     }
 
     /**
+     * 设置一个自定义的ExceptionHandler
      * Set a new {@link ExceptionHandler} for handling exceptions propagated out of the {@link BatchEventProcessor}
      *
      * @param exceptionHandler to replace the existing exceptionHandler.

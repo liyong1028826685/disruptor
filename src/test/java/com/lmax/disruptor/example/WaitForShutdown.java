@@ -10,43 +10,51 @@ import com.lmax.disruptor.util.DaemonThreadFactory;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-public class WaitForShutdown
-{
+/***
+ *@className WaitForShutdown
+ *
+ *@description 主线程等待所有处理器关闭后退出
+ *
+ *@author <a href="http://youngitman.tech">青年IT男</a>
+ *
+ *@date 12:02 2020-02-05
+ *
+ *@JunitTest: {@link  }
+ *
+ *@version v1.0.0
+ *
+**/
+public class WaitForShutdown {
     private static volatile int value = 0;
 
-    private static class Handler implements EventHandler<LongEvent>, LifecycleAware
-    {
+    private static class Handler implements EventHandler<LongEvent>, LifecycleAware {
         private final CountDownLatch latch;
 
-        Handler(CountDownLatch latch)
-        {
+        Handler(CountDownLatch latch) {
             this.latch = latch;
         }
 
         @Override
-        public void onStart()
-        {
+        public void onStart() {
         }
 
         @Override
-        public void onShutdown()
-        {
+        public void onShutdown() {
+            //EventHadler被onShutdown事件回掉
             latch.countDown();
         }
 
         @Override
-        public void onEvent(LongEvent event, long sequence, boolean endOfBatch) throws Exception
-        {
+        public void onEvent(LongEvent event, long sequence, boolean endOfBatch) throws Exception {
             value = 1;
         }
     }
 
-    public static void main(String[] args) throws TimeoutException, InterruptedException
-    {
+    public static void main(String[] args) throws TimeoutException, InterruptedException {
         Disruptor<LongEvent> disruptor = new Disruptor<LongEvent>(
-            LongEvent.FACTORY, 16, DaemonThreadFactory.INSTANCE
+                LongEvent.FACTORY, 16, DaemonThreadFactory.INSTANCE
         );
-
+        //控制主线程等待所有EventHadler处理完成
         CountDownLatch shutdownLatch = new CountDownLatch(2);
 
         disruptor.handleEventsWith(new Handler(shutdownLatch)).then(new Handler(shutdownLatch));
