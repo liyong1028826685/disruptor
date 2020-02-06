@@ -1,9 +1,11 @@
 package com.lmax.disruptor.example;
 
+import com.lmax.disruptor.BlockingWaitStrategy;
 import com.lmax.disruptor.EventFactory;
 import com.lmax.disruptor.EventHandler;
 import com.lmax.disruptor.RingBuffer;
 import com.lmax.disruptor.dsl.Disruptor;
+import com.lmax.disruptor.dsl.ProducerType;
 import com.lmax.disruptor.support.LongEvent;
 import com.lmax.disruptor.util.DaemonThreadFactory;
 
@@ -32,39 +34,26 @@ public class SequentialThreeConsumers {
         }
     }
 
-    private static EventFactory<MyEvent> factory = new EventFactory<MyEvent>() {
-        @Override
-        public MyEvent newInstance() {
-            return new MyEvent();
-        }
+    private static EventFactory<MyEvent> factory = () -> new MyEvent();
+
+    private static EventHandler<MyEvent> handler1 = (event, sequence, endOfBatch) -> {
+        event.b = event.a;
+        System.out.println("The "+event+" Data is handled for the  handler1，and Thread numer is "+Thread.currentThread().getName());
     };
 
-    private static EventHandler<MyEvent> handler1 = new EventHandler<MyEvent>() {
-        @Override
-        public void onEvent(MyEvent event, long sequence, boolean endOfBatch) throws Exception {
-            event.b = event.a;
-            System.out.println("The "+event+" Data is handled for the  handler1，and Thread numer is "+Thread.currentThread().getName());
-        }
+    private static EventHandler<MyEvent> handler2 = (event, sequence, endOfBatch) -> {
+        event.c = event.b;
+        System.out.println("The "+event+" Data is handled for the  handler2，and Thread numer is "+Thread.currentThread().getName());
     };
 
-    private static EventHandler<MyEvent> handler2 = new EventHandler<MyEvent>() {
-        @Override
-        public void onEvent(MyEvent event, long sequence, boolean endOfBatch) throws Exception {
-            event.c = event.b;
-            System.out.println("The "+event+" Data is handled for the  handler2，and Thread numer is "+Thread.currentThread().getName());
-        }
-    };
-
-    private static EventHandler<MyEvent> handler3 = new EventHandler<MyEvent>() {
-        @Override
-        public void onEvent(MyEvent event, long sequence, boolean endOfBatch) throws Exception {
-            event.d = event.c;
-            System.out.println("The "+event+" Data is handled for the  handler3，and Thread numer is "+Thread.currentThread().getName());
-        }
+    private static EventHandler<MyEvent> handler3 = (event, sequence, endOfBatch) -> {
+        event.d = event.c;
+        System.out.println("The "+event+" Data is handled for the  handler3，and Thread numer is "+Thread.currentThread().getName());
     };
 
     public static void main(String[] args) throws InterruptedException {
-        Disruptor<MyEvent> disruptor = new Disruptor<MyEvent>(factory, 4, DaemonThreadFactory.INSTANCE);
+//        新建一个Disruptor实例,单线程生产数据，WaitStrategy采用BlockingWaitStrategy
+        Disruptor<MyEvent> disruptor = new Disruptor<MyEvent>(factory, 4,DaemonThreadFactory.INSTANCE, ProducerType.SINGLE, new BlockingWaitStrategy());
 
         /**
          * The 10:10:null:null Data is handled for the  handler1，and Thread numer is Thread-1

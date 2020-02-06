@@ -182,6 +182,7 @@ public final class RingBuffer<E> extends RingBufferFields<E> implements Cursored
     }
 
     /**
+     * 创建单个生产者，不能用于多线程生产数据
      * Create a new single producer RingBuffer with the specified wait strategy.
      *
      * @param <E> Class of the event stored in the ring buffer.
@@ -218,6 +219,7 @@ public final class RingBuffer<E> extends RingBufferFields<E> implements Cursored
     }
 
     /**
+     * 可用于多线程生产数据
      * Create a new Ring Buffer with the specified producer type (SINGLE or MULTI)
      *
      * @param <E> Class of the event stored in the ring buffer.

@@ -129,6 +129,20 @@ class BatchedPoller<T> {
 
     }
 
+    /***
+     *@className BatchedPoller
+     *
+     *@description 封装本地数据相关操作
+     *
+     *@author <a href="http://youngitman.tech">青年IT男</a>
+     *
+     *@date 18:12 2020-02-06
+     *
+     *@JunitTest: {@link  }
+     *
+     *@version v1.0.0
+     *
+    **/
     private static class BatchedData<T> {
 
         private int msgHighBound;
